@@ -101,7 +101,7 @@ class Snake(GameObject):
     def turn(self, direction):
         """Метод изменения направления движения змейки"""
         direction_vector_x, direction_vector_y = direction
-        if (direction_vector_x * -1, direction_vector_y * -1) == self.direction:
+        if (-direction_vector_x, -direction_vector_y) == self.direction:
             return
         self.next_direction = direction
 
