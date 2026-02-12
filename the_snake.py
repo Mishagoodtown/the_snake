@@ -14,6 +14,9 @@ DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
+# Константы позиции для удобства:
+DEFAULT_POSITIONS = (0, 0)
+
 # Цвет фона - черный:
 BOARD_BACKGROUND_COLOR = (0, 0, 0)
 
@@ -27,7 +30,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 5
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -44,20 +47,28 @@ clock = pygame.time.Clock()
 class GameObject:
     """Базовый класс игрового объекта"""
 
-    def __init__(self, position=(0, 0), color=(0, 0, 0)):
-        self.body_color = color
+    def __init__(self,
+                 position=DEFAULT_POSITIONS,
+                 body_color=BOARD_BACKGROUND_COLOR
+                 ):
+        self.body_color = body_color
         self.position = position
 
     def draw(self):
         """Метод отрисовки объекта"""
-        raise NotImplementedError
+        raise NotImplementedError(
+            'Метод draw() должен быть реализован в дочернем классе'
+        )
 
 
 class Apple(GameObject):
     """Класс яблока"""
 
-    def __init__(self):
-        super().__init__((0, 0), APPLE_COLOR)
+    def __init__(self, occupied_positions=None):
+        super().__init__(position=DEFAULT_POSITIONS, body_color=APPLE_COLOR)
+        if occupied_positions is None:
+            occupied_positions = []
+        self.randomize_position(occupied_positions)
 
     def randomize_position(self, snake_positions):
         """Метод случайного размещения яблока на поле"""
@@ -81,11 +92,7 @@ class Snake(GameObject):
 
     def __init__(self):
         super().__init__((SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), SNAKE_COLOR)
-        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
-        self.direction = choice([UP, DOWN, LEFT, RIGHT])
-        self.next_direction = None
-        self.last = None
-        self.grow = 0
+        self.reset()
 
     def get_head_position(self):
         """Метод получения позиции головы змейки"""
@@ -93,10 +100,10 @@ class Snake(GameObject):
 
     def turn(self, direction):
         """Метод изменения направления движения змейки"""
-        if (direction[0] * -1, direction[1] * -1) == self.direction:
+        direction_vector_x, direction_vector_y = direction
+        if (direction_vector_x * -1, direction_vector_y * -1) == self.direction:
             return
-        else:
-            self.next_direction = direction
+        self.next_direction = direction
 
     def move(self):
         """Метод движения змейки"""
@@ -104,31 +111,13 @@ class Snake(GameObject):
             self.direction = self.next_direction
             self.next_direction = None
 
-        current = self.get_head_position()
-        x, y = self.direction
-
-        # Вычисление новой позиции головы змейки
-        #  с учетом выхода за границы экрана
-        new = (
-            (current[0] + (x * GRID_SIZE)) % SCREEN_WIDTH,
-            (current[1] + (y * GRID_SIZE)) % SCREEN_HEIGHT,
-        )
-
-        # Проверка столкновения с самим собой
-        if new in self.positions[2:]:
-            self.reset()
-        else:
-            self.positions.insert(0, new)
-            if self.grow > 0:
-                self.grow -= 1
-            else:
-                self.last = self.positions.pop()
-
     def reset(self):
-        """Метод сброса змейки в начальное положение"""
+        """Метод сброса змейки в начальное положение и состояние"""
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.next_direction = None
+        self.last = None
+        self.grow = 0
 
     def draw(self):
         """Метод отрисовки змейки"""
@@ -180,7 +169,7 @@ def main():
     screen.fill(BOARD_BACKGROUND_COLOR)
 
     snake = Snake()
-    apple = Apple()
+    apple = Apple(snake.positions)
 
     while True:
         clock.tick(SPEED)
@@ -192,6 +181,27 @@ def main():
         if snake.get_head_position() == apple.position:
             snake.grow += 1
             apple.randomize_position(snake.positions)
+
+        # Проверка столкновения с самим собой
+        current_x, current_y = snake.get_head_position()
+        x, y = snake.direction
+
+        # Вычисление новой позиции головы змейки
+        #  с учетом выхода за границы экрана
+        new = (
+            (current_x + (x * GRID_SIZE)) % SCREEN_WIDTH,
+            (current_y + (y * GRID_SIZE)) % SCREEN_HEIGHT,
+        )
+
+        # Проверка столкновения с самим собой
+        if new in snake.positions[2:]:
+            snake.reset()
+        else:
+            snake.positions.insert(0, new)
+            if snake.grow > 0:
+                snake.grow -= 1
+            else:
+                snake.last = snake.positions.pop()
 
         screen.fill(BOARD_BACKGROUND_COLOR)
         snake.draw()
