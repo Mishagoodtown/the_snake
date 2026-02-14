@@ -2,6 +2,7 @@ from random import choice, randint
 
 import pygame
 
+
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -30,7 +31,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 5
+SPEED = 15
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -111,6 +112,21 @@ class Snake(GameObject):
             self.direction = self.next_direction
             self.next_direction = None
 
+        current_x, current_y = self.get_head_position()
+        x, y = self.direction
+
+        # Вычисление новой позиции головы змейки
+        #  с учетом выхода за границы экрана
+        new = (
+            (current_x + (x * GRID_SIZE)) % SCREEN_WIDTH,
+            (current_y + (y * GRID_SIZE)) % SCREEN_HEIGHT,
+        )
+        self.positions.insert(0, new)
+        if self.grow > 0:
+            self.grow -= 1
+        else:
+            self.last = self.positions.pop()
+            
     def reset(self):
         """Метод сброса змейки в начальное положение и состояние"""
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
@@ -181,27 +197,9 @@ def main():
         if snake.get_head_position() == apple.position:
             snake.grow += 1
             apple.randomize_position(snake.positions)
-
-        # Проверка столкновения с самим собой
-        current_x, current_y = snake.get_head_position()
-        x, y = snake.direction
-
-        # Вычисление новой позиции головы змейки
-        #  с учетом выхода за границы экрана
-        new = (
-            (current_x + (x * GRID_SIZE)) % SCREEN_WIDTH,
-            (current_y + (y * GRID_SIZE)) % SCREEN_HEIGHT,
-        )
-
-        # Проверка столкновения с самим собой
-        if new in snake.positions[2:]:
+        # Проверка столкновения с самим собой    
+        elif snake.get_head_position() in snake.positions[4:]:
             snake.reset()
-        else:
-            snake.positions.insert(0, new)
-            if snake.grow > 0:
-                snake.grow -= 1
-            else:
-                snake.last = snake.positions.pop()
 
         screen.fill(BOARD_BACKGROUND_COLOR)
         snake.draw()
