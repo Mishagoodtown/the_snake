@@ -2,7 +2,6 @@ from random import choice, randint
 
 import pygame
 
-
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -126,7 +125,7 @@ class Snake(GameObject):
             self.grow -= 1
         else:
             self.last = self.positions.pop()
-            
+
     def reset(self):
         """Метод сброса змейки в начальное положение и состояние"""
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
@@ -197,7 +196,7 @@ def main():
         if snake.get_head_position() == apple.position:
             snake.grow += 1
             apple.randomize_position(snake.positions)
-        # Проверка столкновения с самим собой    
+        # Проверка столкновения с самим собой
         elif snake.get_head_position() in snake.positions[4:]:
             snake.reset()
 
